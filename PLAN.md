@@ -8,11 +8,12 @@ Order by dependency. Each stage: contracts → implementation → Pest tests →
 - `Contracts/MailDriverContract.php` — `send(EmailMessage): SendResult`
 - `Contracts/StorageAdapterContract.php` — stub interface, methods added incrementally as domains need persistence (Eloquent/WP adapters implement later)
 
-### Stage 1 — Drivers (Phase 1 scope)
-- `Drivers/PhpMailDriver.php` — wraps `mail()`/sendmail
-- `Drivers/SmtpDriver.php` — Symfony Mailer SMTP transport
+### Stage 1 — Drivers (Phase 1 scope) ✅
+- `Drivers/PhpMailDriver.php` — wraps `mail()`/sendmail via Symfony Mailer's `SendmailTransport`
+- `Drivers/SmtpDriver.php` — Symfony Mailer `EsmtpTransport`/`Smtps` via `Transport::fromDsn()`
 - `Drivers/ResendDriver.php`, `Drivers/MailersendDriver.php` — HTTP API via PSR-18 client (injectable for testing)
-- Tests: mock HTTP client/transport, assert `SendResult` populated correctly per driver
+- `Drivers/Support/SymfonyEmailFactory.php` — shared `EmailMessage` → Symfony `Email` conversion for Php/Smtp drivers
+- Tests: mock HTTP client (`FakeHttpClient` + `nyholm/psr7`) for Resend/Mailersend; connection-failure paths for Php/Smtp drivers; `SymfonyEmailFactory` mapping
 
 ### Stage 2 — Templates
 - `Domain/Templates/TemplateCompiler.php` — stores Unlayer design JSON + compiled HTML, validates unsubscribe block present
