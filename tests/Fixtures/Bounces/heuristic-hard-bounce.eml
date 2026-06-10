@@ -1,0 +1,15 @@
+From: postmaster@legacy-mailserver.test
+To: bounces@yourdomain.com
+Subject: Mail delivery failed: returning message to sender
+Content-Type: text/plain; charset=us-ascii
+
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of
+its recipients. This is a permanent error.
+
+The following address(es) failed:
+
+  someone@example.test
+    SMTP error from remote mail server after RCPT TO:
+    550 5.1.1 <someone@example.test>: Recipient address rejected: User unknown

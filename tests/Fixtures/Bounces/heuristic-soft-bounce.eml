@@ -1,0 +1,10 @@
+From: postmaster@legacy-mailserver.test
+To: bounces@yourdomain.com
+Subject: Warning: message delayed
+Content-Type: text/plain; charset=us-ascii
+
+This is a warning that the message has not yet been delivered.
+It will be retried, but delivery is being deferred temporarily.
+
+  Recipient: someone@example.test
+    441 4.4.1 Connection timed out, try again later

@@ -33,11 +33,12 @@ Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdap
 - Extended `StorageAdapterContract` with contact/list/membership CRUD methods
 - Tests: dedup, suppression checks, `InMemoryStorageAdapter` (in `tests/Fakes/`) exercised as a contract conformance fake
 
-### Stage 4 — Bounces (Phase 1 + 4)
-- `Contracts/BounceParserContract.php`
-- `Domain/Bounces/BounceClassifier.php` — hard/soft/complaint classification, soft-bounce counter → auto-hard after N (default 3, configurable)
-- `Domain/Bounces/DsnParser.php` — RFC 3464 parsing + heuristic subject-line fallback
-- Tests: classifier state transitions, DSN parsing fixtures (sample bounce emails)
+### Stage 4 — Bounces (Phase 1 + 4) ✅
+- `Contracts/BounceParserContract.php` — `parse(rawMessage): ?ParsedBounce`
+- `Domain/Bounces/BounceClassifier.php` — hard/soft/complaint classification, soft-bounce counter → auto-hard after N (default 3, configurable), resets on successful delivery
+- `Domain/Bounces/DsnParser.php` — RFC 3464 `Final-Recipient`/`Status` parsing + heuristic subject/body fallback for non-standard bounces
+- `Domain/Bounces/ParsedBounce.php` — value object (recipient, bounceType, statusCode)
+- Tests: classifier state transitions (hard/soft/complaint, escalation, reset), DSN parsing fixtures under `tests/Fixtures/Bounces/` (RFC 3464 hard/soft, heuristic hard/soft, unrecognised)
 
 ### Stage 5 — Provider Webhooks (Phase 1, moved into core)
 - Framework-agnostic — both `nettmail/laravel` and `nettmail/wordpress` need the same signature verification + payload parsing, so it lives here rather than in the Laravel adapter.
