@@ -62,10 +62,15 @@ Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdap
 - `Domain/Tracking/EventRecorder.php` + `TrackingEvent.php` — builds open/click `TrackingEvent` records (reuses `Domain/Webhooks/EventType`); `isFirstOpen()` for the first-open-wins rule
 - Tests: pixel URL generation and HTML insertion, link rewriting (preserves unsubscribe links unwrapped, respects explicit skip list, ignores anchors without href), event recorder
 
-### Stage 8 — Remaining Drivers (Phase 3)
-- `Drivers/MailgunDriver.php`, `PostmarkDriver.php`, SES driver
-- Same `MailDriverContract` + `SendResult` pattern as Stage 1
-- Add corresponding webhook handlers (Stage 5 pattern) for SES (via SNS) if not already covered
+### Stage 8 — Remaining Drivers (Phase 3) ✅
+- `Drivers/Support/MultipartFormBuilder.php` — builds multipart/form-data bodies (fields + file attachments) for Mailgun
+- `Drivers/MailgunDriver.php` — multipart POST to `{baseUrl}/{domain}/messages`, Basic auth `api:{apiKey}`; success keyed off `body['id']`
+- `Drivers/PostmarkDriver.php` — JSON POST to `{baseUrl}/email` with `X-Postmark-Server-Token` header; failure when `ErrorCode !== 0`
+- `Drivers/Support/SesV2Signer.php` — from-scratch AWS SigV4 signer (no AWS SDK dependency), returns `Authorization`/`X-Amz-Date`/`X-Amz-Content-Sha256` headers
+- `Drivers/SesDriver.php` — signed POST to SES v2 `outbound-emails` endpoint; uses `Content.Simple` for plain html/text, falls back to `Content.Raw.Data` (base64 MIME via `SymfonyEmailFactory`) when attachments are present
+- `Drivers/Webhooks/SesWebhookHandler.php` — verifies SNS notifications by checking `TopicArn` against the configured secret, and (when an HTTP client is supplied) verifies the SNS message signature against the certificate at `SigningCertURL`; maps SES `eventType` (Send/Delivery/Open/Click/Bounce/Complaint) to `EventType`, with Bounce split into Hard/SoftBounced via `bounce.bounceType`
+- All drivers follow the same `MailDriverContract` + `SendResult` pattern as Stage 1
+- Tests: signed-request assembly, raw MIME fallback with attachments, API error handling for each driver, SES SNS signature verification (valid + invalid), SES event mapping
 
 ---
 
