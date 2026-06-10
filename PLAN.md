@@ -40,13 +40,14 @@ Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdap
 - `Domain/Bounces/ParsedBounce.php` — value object (recipient, bounceType, statusCode)
 - Tests: classifier state transitions (hard/soft/complaint, escalation, reset), DSN parsing fixtures under `tests/Fixtures/Bounces/` (RFC 3464 hard/soft, heuristic hard/soft, unrecognised)
 
-### Stage 5 — Provider Webhooks (Phase 1, moved into core)
+### Stage 5 — Provider Webhooks (Phase 1, moved into core) ✅
 - Framework-agnostic — both `nettmail/laravel` and `nettmail/wordpress` need the same signature verification + payload parsing, so it lives here rather than in the Laravel adapter.
-- `Contracts/WebhookHandlerContract.php` — `verify(rawBody, headers, secret): bool` + `parse(payload): NormalizedEvent[]`
-- Per-provider handlers: `Drivers/Webhooks/ResendWebhookHandler.php`, `MailersendWebhookHandler.php`, `MailgunWebhookHandler.php`, `PostmarkWebhookHandler.php` — each verifies its own signature scheme and maps provider event shapes to a normalized `Event` DTO (type, provider message ID, timestamp, raw payload)
+- `Contracts/WebhookHandlerContract.php` — `verify(rawBody, headers, secret): bool` + `parse(payload): NormalizedEvent[]` (header keys lowercased by caller)
+- `Domain/Webhooks/EventType.php` (enum), `NormalizedEvent.php` (type, provider message ID, occurred-at, raw payload)
+- Per-provider handlers: `Drivers/Webhooks/ResendWebhookHandler.php` (Svix signature), `MailersendWebhookHandler.php` (HMAC-SHA256 `Signature` header), `MailgunWebhookHandler.php` (HMAC of `timestamp+token` from payload's `signature` object), `PostmarkWebhookHandler.php` (no native signing — optional shared-secret header) — each maps provider event shapes to `NormalizedEvent`
 - Normalized events feed `BounceClassifier` (Stage 4) and `Domain/Tracking/EventRecorder` (Stage 6)
 - Adapters (`nettmail/laravel`, `nettmail/wordpress`) only need: a route/REST endpoint that stores the raw payload, calls the matching handler, and persists the result via `StorageAdapterContract`
-- Tests: signature verification (valid/invalid) and payload→event mapping per provider, using recorded sample payloads
+- Tests: signature verification (valid/invalid) and payload→event mapping per provider
 
 ### Stage 6 — Campaigns & Segmentation (Phase 3)
 - `Domain/Campaigns/Campaign.php` — status state machine (`draft → scheduled → sending → sent|failed|paused`)
