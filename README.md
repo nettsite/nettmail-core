@@ -1,22 +1,22 @@
-# NettMail core package - framework-agnostic email sending, contacts, lists, segments, bounce handling and template compilation
+# NettMail Core
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/nettmail/core.svg?style=flat-square)](https://packagist.org/packages/nettmail/core)
-[![Tests](https://github.com/spatie/package-skeleton-php/actions/workflows/run-tests-pest.yml/badge.svg)](https://github.com/nettsite/nettmail-core/actions/workflows/run-tests.yml)
+[![Tests](https://github.com/nettsite/nettmail-core/actions/workflows/run-tests.yml/badge.svg)](https://github.com/nettsite/nettmail-core/actions/workflows/run-tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/nettmail/core.svg?style=flat-square)](https://packagist.org/packages/nettmail/core)
 
-This is where your description should go. Try and limit it to a paragraph or two. Consider adding a small example.
+Framework-agnostic PHP 8.2+ core for **NettMail** — a composable email package handling transactional delivery, broadcast campaigns, drag-and-drop template authoring (Unlayer), contact list management, segmentation, bounce processing, and provider webhook ingestion.
 
-## Support us
+This package contains all domain logic, contracts, and drivers. It has no dependency on Laravel or WordPress — those are thin adapters built on top of `nettmail/core`:
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/core.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/core)
+- [`nettmail/laravel`](https://github.com/nettsite/nettmail-laravel) — Laravel adapter (Eloquent models, Livewire admin UI, queued jobs)
+- `nettmail/wordpress` — WordPress plugin adapter
+- [`nettmail/filament`](https://github.com/nettsite/nettmail-filament) — Filament UI adapter (planned)
 
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
+## Status
 
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+Early development. See [PLAN.md](PLAN.md) for the build roadmap.
 
 ## Installation
-
-You can install the package via composer:
 
 ```bash
 composer require nettmail/core
@@ -25,8 +25,18 @@ composer require nettmail/core
 ## Usage
 
 ```php
-$skeleton = new Nettsite\NettMail\Core();
-echo $skeleton->echoPhrase('Hello, Nettsite\NettMail!');
+use Nettsite\NettMail\Core\NettMail;
+use Nettsite\NettMail\Core\Mail\EmailAddress;
+use Nettsite\NettMail\Core\Mail\EmailMessage;
+
+$nettmail = new NettMail($driver); // $driver implements MailDriverContract
+
+$result = $nettmail->send(new EmailMessage(
+    from: new EmailAddress('sender@example.com', 'Sender'),
+    to: [new EmailAddress('recipient@example.com')],
+    subject: 'Hello',
+    html: '<p>Hello world</p>',
+));
 ```
 
 ## Testing
