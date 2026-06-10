@@ -2,4 +2,6 @@
 
 namespace Nettsite\NettMail\Core;
 
-class CoreClass {}
+class CoreClass
+{
+}
