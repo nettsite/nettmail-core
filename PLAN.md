@@ -15,11 +15,14 @@ Order by dependency. Each stage: contracts → implementation → Pest tests →
 - `Drivers/Support/SymfonyEmailFactory.php` — shared `EmailMessage` → Symfony `Email` conversion for Php/Smtp drivers
 - Tests: mock HTTP client (`FakeHttpClient` + `nyholm/psr7`) for Resend/Mailersend; connection-failure paths for Php/Smtp drivers; `SymfonyEmailFactory` mapping
 
-### Stage 2 — Templates
-- `Domain/Templates/TemplateCompiler.php` — stores Unlayer design JSON + compiled HTML, validates unsubscribe block present
-- `Domain/Templates/PlainTextConverter.php` — HTML → plain text fallback
-- Merge-tag substitution (`{{first_name}}` etc.) — shared by transactional + broadcast
-- Tests: merge tag replacement, plain-text conversion, missing-unsubscribe-block validation
+### Stage 2 — Templates ✅
+- `Domain/Templates/TemplateCompiler.php` — compiles HTML into a `CompiledTemplate` (html + auto-generated plain text), validates `{{unsubscribe_url}}` present for `TemplateType::Broadcast`
+- `Domain/Templates/PlainTextConverter.php` — DOM-based HTML → plain text (block elements → newlines, links rendered as `text (url)`, entities decoded)
+- `Domain/Templates/MergeTagRenderer.php` — `{{first_name}}` etc. substitution, unknown tags left untouched
+- `Domain/Templates/TemplateType.php` (enum), `CompiledTemplate.php` (value object), `MissingUnsubscribeLinkException.php`
+- Tests: merge tag replacement (incl. whitespace/repeats), plain-text conversion (headings, links, entities, blank-line collapsing), unsubscribe-link validation for broadcast vs transactional
+
+Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdapterContract`/adapters (Stage 3+), not core's compiler — core only compiles/validates HTML.
 
 ### Stage 3 — Contacts & Lists (Phase 2 core portion)
 - `Domain/Contacts/Contact.php`, `MailingList.php`, `ListMembership.php`, `Suppression.php` — entities/value objects
