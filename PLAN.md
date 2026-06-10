@@ -49,11 +49,12 @@ Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdap
 - Adapters (`nettmail/laravel`, `nettmail/wordpress`) only need: a route/REST endpoint that stores the raw payload, calls the matching handler, and persists the result via `StorageAdapterContract`
 - Tests: signature verification (valid/invalid) and payload→event mapping per provider
 
-### Stage 6 — Campaigns & Segmentation (Phase 3)
-- `Domain/Campaigns/Campaign.php` — status state machine (`draft → scheduled → sending → sent|failed|paused`)
-- `Domain/Campaigns/CampaignSender.php`, `MergeTag.php`
-- Segment condition evaluator: AND/OR, one level of nesting, full operator set from spec (`is`, `contains`, `between`, `within last N days`, etc.)
-- Tests: state machine transitions, segment evaluator against fixture contact sets
+### Stage 6 — Campaigns & Segmentation (Phase 3) ✅
+- `Domain/Campaigns/Campaign.php` — status state machine (`draft → scheduled → sending → sent|failed|paused`), `CampaignStatus` enum, `InvalidCampaignTransitionException`
+- `Domain/Campaigns/CampaignSender.php` — suppression check (`shouldSend`) + per-contact merge tag rendering of subject/html/text
+- `Domain/Campaigns/MergeTag.php` — merge tag definitions for the UI picker, with `defaults()`
+- `Domain/Campaigns/Segmentation/` — `SegmentCondition`, `SegmentGroup`, `SegmentOperator`, `SegmentLogic` (enum), `SegmentEvaluator` — AND/OR with one level of nesting, full operator set from spec (`is`, `is not`, `contains`, `does not contain`, `starts with`, `is blank`/`is not blank`, `>`/`<`/`between`, `before`/`after`/`within last N days`)
+- Tests: campaign state machine transitions (valid + invalid), campaign sender suppression/rendering, segment evaluator (AND/OR, nesting, all operators)
 
 ### Stage 7 — Tracking (Phase 3)
 - `Domain/Tracking/PixelGenerator.php`, `LinkRewriter.php`, `EventRecorder.php`
