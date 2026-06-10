@@ -1,0 +1,49 @@
+{
+    "name": "nettmail/core",
+    "description": "NettMail core package - framework-agnostic email sending, contacts, lists, segments, bounce handling and template compilation",
+    "keywords": [
+        "nettmail",
+        "core"
+    ],
+    "homepage": "https://github.com/nettsite/nettmail-core",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nettsite",
+            "email": "nettsitesa@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.21.1",
+        "spatie/ray": "^1.28"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nettsite\\NettMail\\Core\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nettsite\\NettMail\\Core\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+            "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --allow-risky=yes"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
