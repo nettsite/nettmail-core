@@ -56,10 +56,11 @@ Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdap
 - `Domain/Campaigns/Segmentation/` — `SegmentCondition`, `SegmentGroup`, `SegmentOperator`, `SegmentLogic` (enum), `SegmentEvaluator` — AND/OR with one level of nesting, full operator set from spec (`is`, `is not`, `contains`, `does not contain`, `starts with`, `is blank`/`is not blank`, `>`/`<`/`between`, `before`/`after`/`within last N days`)
 - Tests: campaign state machine transitions (valid + invalid), campaign sender suppression/rendering, segment evaluator (AND/OR, nesting, all operators)
 
-### Stage 7 — Tracking (Phase 3)
-- `Domain/Tracking/PixelGenerator.php`, `LinkRewriter.php`, `EventRecorder.php`
-- Link rewriting must skip unsubscribe links
-- Tests: pixel URL generation, link rewriting (preserves unsubscribe links unwrapped)
+### Stage 7 — Tracking (Phase 3) ✅
+- `Domain/Tracking/PixelGenerator.php` — builds `{baseUrl}/nettmail/track/open/{send_token}`, `<img>` tag, and inserts it before `</body>` (or appends if absent)
+- `Domain/Tracking/LinkRewriter.php` — DOM-based, rewrites `<a href>` to `{baseUrl}/nettmail/track/click/{send_token}/{link_hash}`; skips the `{{unsubscribe_url}}` merge tag and any explicitly passed `skipUrls`
+- `Domain/Tracking/EventRecorder.php` + `TrackingEvent.php` — builds open/click `TrackingEvent` records (reuses `Domain/Webhooks/EventType`); `isFirstOpen()` for the first-open-wins rule
+- Tests: pixel URL generation and HTML insertion, link rewriting (preserves unsubscribe links unwrapped, respects explicit skip list, ignores anchors without href), event recorder
 
 ### Stage 8 — Remaining Drivers (Phase 3)
 - `Drivers/MailgunDriver.php`, `PostmarkDriver.php`, SES driver
