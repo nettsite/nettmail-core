@@ -24,13 +24,14 @@ Order by dependency. Each stage: contracts → implementation → Pest tests →
 
 Note: design JSON persistence + Unlayer-specific storage belongs to `StorageAdapterContract`/adapters (Stage 3+), not core's compiler — core only compiles/validates HTML.
 
-### Stage 3 — Contacts & Lists (Phase 2 core portion)
+### Stage 3 — Contacts & Lists (Phase 2 core portion) ✅
 - `Domain/Contacts/Contact.php`, `MailingList.php`, `ListMembership.php`, `Suppression.php` — entities/value objects
-- Dedup logic: email normalization (lowercase, trim)
-- Global suppression rules: hard bounce / complaint / global unsubscribe → exempt only operational transactional
+- `Domain/Contacts/BounceType.php`, `MembershipStatus.php`, `SuppressionReason.php` (enums), `EmailNormalizer.php`
+- Dedup logic: email normalization (lowercase, trim) applied in `Contact`'s constructor and used for lookups
+- Global suppression rules on `Contact::isSuppressed()`: hard bounce / complaint / global unsubscribe → exempt only operational transactional
 - `Contracts/ContactSourceContract.php` — as defined in spec
-- Extend `StorageAdapterContract` with contact/list CRUD methods
-- Tests: dedup, suppression checks, contract conformance (in-memory adapter for testing)
+- Extended `StorageAdapterContract` with contact/list/membership CRUD methods
+- Tests: dedup, suppression checks, `InMemoryStorageAdapter` (in `tests/Fakes/`) exercised as a contract conformance fake
 
 ### Stage 4 — Bounces (Phase 1 + 4)
 - `Contracts/BounceParserContract.php`
