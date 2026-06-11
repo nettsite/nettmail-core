@@ -22,7 +22,7 @@ vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --allow-risky=yes
 
 ### Build order
 
-The spec (`../email-package-spec.html`, v0.4) is the authoritative source for requirements and remaining work — see its Delivery Phases section. Stages 0–8 (foundation, drivers, templates, contacts/lists, bounces, webhooks, campaigns/segmentation, tracking, remaining drivers) are complete; the stage-by-stage build log lives in git history. Follow the established pattern for new work: contracts → implementation → Pest tests → commit.
+The spec (`../email-package-spec.html`, v0.4) is the authoritative source for requirements and remaining work — see its Delivery Phases section. Stages 0–9 (foundation, drivers, templates, contacts/lists, bounces, webhooks, campaigns/segmentation, tracking, remaining drivers, adapter-readiness additions) are complete; the stage-by-stage build log lives in git history. Follow the established pattern for new work: contracts → implementation → Pest tests → commit.
 
 ### Layout
 
