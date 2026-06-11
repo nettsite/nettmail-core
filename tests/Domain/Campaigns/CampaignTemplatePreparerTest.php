@@ -25,6 +25,40 @@ it('prepares a campaign template with tracking links and a pixel', function () {
         ->and($prepared->text)->toBe('Hi - https://example.com/page');
 });
 
+it('appends a physical address footer before </body> and to the plain text', function () {
+    $preparer = new CampaignTemplatePreparer(
+        new LinkRewriter('https://example.com'),
+        new PixelGenerator('https://example.com'),
+    );
+
+    $template = new CompiledTemplate(
+        html: '<html><body><p>Hi</p></body></html>',
+        plainText: 'Hi',
+    );
+
+    $prepared = $preparer->prepare($template, '123 Main St, Springfield');
+
+    expect($prepared->html)->toContain('123 Main St, Springfield')
+        ->and($prepared->html)->toMatch('/123 Main St, Springfield<\/p>.*<\/body>/s')
+        ->and($prepared->text)->toContain('123 Main St, Springfield');
+});
+
+it('does not duplicate the physical address footer when already present', function () {
+    $preparer = new CampaignTemplatePreparer(
+        new LinkRewriter('https://example.com'),
+        new PixelGenerator('https://example.com'),
+    );
+
+    $template = new CompiledTemplate(
+        html: '<html><body><p>Hi</p><p>123 Main St, Springfield</p></body></html>',
+        plainText: 'Hi',
+    );
+
+    $prepared = $preparer->prepare($template, '123 Main St, Springfield');
+
+    expect(substr_count($prepared->html, '123 Main St, Springfield'))->toBe(1);
+});
+
 it('generates a different placeholder on each call', function () {
     $preparer = new CampaignTemplatePreparer(
         new LinkRewriter('https://example.com'),

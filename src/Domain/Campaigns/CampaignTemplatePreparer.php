@@ -20,13 +20,35 @@ final class CampaignTemplatePreparer
     ) {
     }
 
-    public function prepare(CompiledTemplate $template): PreparedCampaignTemplate
+    /**
+     * @param ?string $physicalAddress CAN-SPAM footer text. Appended before
+     *                                  `</body>` unless already present in the
+     *                                  HTML (template author placed it manually).
+     */
+    public function prepare(CompiledTemplate $template, ?string $physicalAddress = null): PreparedCampaignTemplate
     {
         $placeholder = '{{__send_token_'.bin2hex(random_bytes(8)).'}}';
 
         $rewritten = $this->linkRewriter->rewrite($template->html, $placeholder);
         $html = $this->pixelGenerator->appendToHtml($rewritten->html, $placeholder);
+        $text = $template->plainText;
 
-        return new PreparedCampaignTemplate($html, $template->plainText, $rewritten->links, $placeholder);
+        if ($physicalAddress !== null && ! str_contains($html, $physicalAddress)) {
+            $html = $this->appendFooter($html, $physicalAddress);
+            $text .= "\n\n".$physicalAddress;
+        }
+
+        return new PreparedCampaignTemplate($html, $text, $rewritten->links, $placeholder);
+    }
+
+    private function appendFooter(string $html, string $physicalAddress): string
+    {
+        $footer = '<p>'.htmlspecialchars($physicalAddress, ENT_QUOTES).'</p>';
+
+        if (preg_match('/<\/body>/i', $html) === 1) {
+            return preg_replace_callback('/<\/body>/i', fn (array $m): string => $footer.$m[0], $html, 1);
+        }
+
+        return $html.$footer;
     }
 }
