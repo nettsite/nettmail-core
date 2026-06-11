@@ -21,6 +21,11 @@ final class ResendWebhookHandler implements WebhookHandlerContract
         'email.complained' => EventType::Complained,
     ];
 
+    public function __construct(
+        private readonly int $timestampToleranceSeconds = 300,
+    ) {
+    }
+
     public function verify(string $rawBody, array $headers, string $secret): bool
     {
         $id = $headers['svix-id'] ?? null;
@@ -28,6 +33,10 @@ final class ResendWebhookHandler implements WebhookHandlerContract
         $signatureHeader = $headers['svix-signature'] ?? null;
 
         if ($id === null || $timestamp === null || $signatureHeader === null) {
+            return false;
+        }
+
+        if (abs(time() - (int) $timestamp) > $this->timestampToleranceSeconds) {
             return false;
         }
 

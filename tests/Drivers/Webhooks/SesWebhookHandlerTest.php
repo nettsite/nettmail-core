@@ -81,6 +81,104 @@ it('verifies the sns signature when an http client is provided', function () {
     expect($handler->verify(json_encode($payload), [], ''))->toBeTrue();
 });
 
+it('verifies a SignatureVersion 2 (SHA256) sns signature', function () {
+    $keyPair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+
+    $payload = sesPayload('Delivery');
+    $payload['SignatureVersion'] = '2';
+    unset($payload['Signature']);
+
+    $signableString = '';
+    foreach (['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type'] as $key) {
+        if (! isset($payload[$key])) {
+            continue;
+        }
+
+        $signableString .= "{$key}\n{$payload[$key]}\n";
+    }
+
+    openssl_sign($signableString, $signature, $keyPair, OPENSSL_ALGO_SHA256);
+
+    $csr = openssl_csr_new(['commonName' => 'nettmail-test'], $keyPair);
+    $x509 = openssl_csr_sign($csr, null, $keyPair, 1);
+    openssl_x509_export($x509, $certPem);
+
+    $payload['Signature'] = base64_encode($signature);
+
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, [], $certPem));
+
+    $handler = new SesWebhookHandler($httpClient, $factory);
+
+    expect($handler->verify(json_encode($payload), [], ''))->toBeTrue();
+});
+
+it('rejects a SignatureVersion 2 payload signed with SHA1', function () {
+    $keyPair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+
+    $payload = sesPayload('Delivery');
+    $payload['SignatureVersion'] = '2';
+    unset($payload['Signature']);
+
+    $signableString = '';
+    foreach (['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type'] as $key) {
+        if (! isset($payload[$key])) {
+            continue;
+        }
+
+        $signableString .= "{$key}\n{$payload[$key]}\n";
+    }
+
+    openssl_sign($signableString, $signature, $keyPair, OPENSSL_ALGO_SHA1);
+
+    $csr = openssl_csr_new(['commonName' => 'nettmail-test'], $keyPair);
+    $x509 = openssl_csr_sign($csr, null, $keyPair, 1);
+    openssl_x509_export($x509, $certPem);
+
+    $payload['Signature'] = base64_encode($signature);
+
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, [], $certPem));
+
+    $handler = new SesWebhookHandler($httpClient, $factory);
+
+    expect($handler->verify(json_encode($payload), [], ''))->toBeFalse();
+});
+
+it('fetches the signing certificate only once across multiple verify calls', function () {
+    $keyPair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+
+    $payload = sesPayload('Delivery');
+    unset($payload['Signature']);
+
+    $signableString = '';
+    foreach (['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type'] as $key) {
+        if (! isset($payload[$key])) {
+            continue;
+        }
+
+        $signableString .= "{$key}\n{$payload[$key]}\n";
+    }
+
+    openssl_sign($signableString, $signature, $keyPair, OPENSSL_ALGO_SHA1);
+
+    $csr = openssl_csr_new(['commonName' => 'nettmail-test'], $keyPair);
+    $x509 = openssl_csr_sign($csr, null, $keyPair, 1);
+    openssl_x509_export($x509, $certPem);
+
+    $payload['Signature'] = base64_encode($signature);
+
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, [], $certPem));
+
+    $handler = new SesWebhookHandler($httpClient, $factory);
+
+    $handler->verify(json_encode($payload), [], '');
+    $handler->verify(json_encode($payload), [], '');
+
+    expect($httpClient->requestCount)->toBe(1);
+});
+
 it('rejects an invalid sns signature', function () {
     $payload = sesPayload('Delivery');
     $payload['Signature'] = base64_encode('not-a-real-signature');

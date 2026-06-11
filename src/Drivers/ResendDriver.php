@@ -3,7 +3,8 @@
 namespace Nettsite\NettMail\Core\Drivers;
 
 use Nettsite\NettMail\Core\Contracts\MailDriverContract;
-use Nettsite\NettMail\Core\Mail\EmailAddress;
+use Nettsite\NettMail\Core\Drivers\Support\AddressFormatter;
+use Nettsite\NettMail\Core\Drivers\Support\AttachmentReader;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\Mail\SendResult;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -51,8 +52,8 @@ final class ResendDriver implements MailDriverContract
     private function payload(EmailMessage $message): array
     {
         $payload = [
-            'from' => self::formatAddress($message->from),
-            'to' => array_map(self::formatAddress(...), $message->to),
+            'from' => AddressFormatter::format($message->from),
+            'to' => array_map(AddressFormatter::format(...), $message->to),
             'subject' => $message->subject,
         ];
 
@@ -65,34 +66,31 @@ final class ResendDriver implements MailDriverContract
         }
 
         if ($message->cc !== []) {
-            $payload['cc'] = array_map(self::formatAddress(...), $message->cc);
+            $payload['cc'] = array_map(AddressFormatter::format(...), $message->cc);
         }
 
         if ($message->bcc !== []) {
-            $payload['bcc'] = array_map(self::formatAddress(...), $message->bcc);
+            $payload['bcc'] = array_map(AddressFormatter::format(...), $message->bcc);
         }
 
         if ($message->replyTo !== null) {
-            $payload['reply_to'] = self::formatAddress($message->replyTo);
+            $payload['reply_to'] = AddressFormatter::format($message->replyTo);
         }
 
         if ($message->attachments !== []) {
             $payload['attachments'] = array_map(
                 fn (array $attachment): array => [
                     'filename' => $attachment['name'],
-                    'content' => base64_encode(file_get_contents($attachment['path'])),
+                    'content' => base64_encode(AttachmentReader::read($attachment['path'])),
                 ],
                 $message->attachments,
             );
         }
 
-        return $payload;
-    }
+        if ($message->headers !== []) {
+            $payload['headers'] = $message->headers;
+        }
 
-    private static function formatAddress(EmailAddress $address): string
-    {
-        return $address->name !== null
-            ? "{$address->name} <{$address->email}>"
-            : $address->email;
+        return $payload;
     }
 }

@@ -3,9 +3,9 @@
 use Nettsite\NettMail\Core\Domain\Webhooks\EventType;
 use Nettsite\NettMail\Core\Drivers\Webhooks\MailgunWebhookHandler;
 
-function mailgunPayload(string $secret, string $event, string $severity = ''): array
+function mailgunPayload(string $secret, string $event, string $severity = '', ?string $timestamp = null): array
 {
-    $timestamp = '1700000000';
+    $timestamp ??= (string) time();
     $token = 'token-123';
 
     $eventData = ['event' => $event, 'timestamp' => (int) $timestamp];
@@ -40,6 +40,29 @@ it('rejects an invalid signature', function () {
 
 it('rejects payloads without a signature object', function () {
     expect((new MailgunWebhookHandler())->verify('{}', [], 'test-secret'))->toBeFalse();
+});
+
+it('rejects a signature with a timestamp outside the tolerance window', function () {
+    $secret = 'test-secret';
+    $body = json_encode(mailgunPayload($secret, 'delivered', timestamp: (string) (time() - 1000)));
+
+    expect((new MailgunWebhookHandler())->verify($body, [], $secret))->toBeFalse();
+});
+
+it('accepts a custom timestamp tolerance', function () {
+    $secret = 'test-secret';
+    $body = json_encode(mailgunPayload($secret, 'delivered', timestamp: (string) (time() - 1000)));
+
+    expect((new MailgunWebhookHandler(timestampToleranceSeconds: 2000))->verify($body, [], $secret))->toBeTrue();
+});
+
+it('normalizes the message id by stripping angle brackets', function () {
+    $payload = mailgunPayload('secret', 'delivered');
+    $payload['event-data']['message']['headers']['message-id'] = '<abc123@domain.com>';
+
+    $events = (new MailgunWebhookHandler())->parse($payload);
+
+    expect($events[0]->providerMessageId)->toBe('abc123@domain.com');
 });
 
 it('maps a permanent failure to a hard bounce', function () {

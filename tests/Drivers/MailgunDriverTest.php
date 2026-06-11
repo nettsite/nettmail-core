@@ -7,6 +7,20 @@ use Nettsite\NettMail\Core\Tests\Fakes\FakeHttpClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 
+it('throws when an attachment file does not exist', function () {
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 'mg-123', 'message' => 'Queued'])));
+
+    $driver = new MailgunDriver('key-test', 'mg.example.com', $httpClient, $factory, $factory);
+
+    $driver->send(new EmailMessage(
+        from: new EmailAddress('sender@example.com'),
+        to: [new EmailAddress('recipient@example.com')],
+        subject: 'Hello',
+        attachments: [['path' => '/nonexistent/file.txt', 'name' => 'file.txt']],
+    ));
+})->throws(RuntimeException::class);
+
 it('sends an email via the mailgun api', function () {
     $factory = new Psr17Factory();
     $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => 'mg-123', 'message' => 'Queued'])));
@@ -36,6 +50,21 @@ it('sends an email via the mailgun api', function () {
         ->and($body)->toContain('recipient@example.com')
         ->and($body)->toContain('name="html"')
         ->and($body)->toContain('<p>Hi</p>');
+});
+
+it('normalizes the message id by stripping angle brackets', function () {
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '<mg-123@mg.example.com>', 'message' => 'Queued'])));
+
+    $driver = new MailgunDriver('key-test', 'mg.example.com', $httpClient, $factory, $factory);
+
+    $result = $driver->send(new EmailMessage(
+        from: new EmailAddress('sender@example.com'),
+        to: [new EmailAddress('recipient@example.com')],
+        subject: 'Hello',
+    ));
+
+    expect($result->messageId)->toBe('mg-123@mg.example.com');
 });
 
 it('returns a failure result on a mailgun api error', function () {

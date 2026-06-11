@@ -21,14 +21,14 @@ final class MultipartFormBuilder
     public function addField(string $name, string $value): void
     {
         $this->body .= "--{$this->boundary}\r\n";
-        $this->body .= "Content-Disposition: form-data; name=\"{$name}\"\r\n\r\n";
+        $this->body .= 'Content-Disposition: form-data; name="'.self::escape($name)."\"\r\n\r\n";
         $this->body .= $value."\r\n";
     }
 
     public function addFile(string $name, string $filename, string $content): void
     {
         $this->body .= "--{$this->boundary}\r\n";
-        $this->body .= "Content-Disposition: form-data; name=\"{$name}\"; filename=\"{$filename}\"\r\n";
+        $this->body .= 'Content-Disposition: form-data; name="'.self::escape($name).'"; filename="'.self::escape($filename)."\"\r\n";
         $this->body .= "Content-Type: application/octet-stream\r\n\r\n";
         $this->body .= $content."\r\n";
     }
@@ -36,5 +36,10 @@ final class MultipartFormBuilder
     public function build(): string
     {
         return $this->body."--{$this->boundary}--\r\n";
+    }
+
+    private static function escape(string $value): string
+    {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 }

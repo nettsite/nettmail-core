@@ -96,3 +96,46 @@ it('treats a missing field as blank', function () {
 
     expect((new SegmentEvaluator())->evaluate($group, []))->toBeTrue();
 });
+
+it('matches Contains, DoesNotContain and StartsWith case-insensitively', function () {
+    $contains = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('company', SegmentOperator::Contains, 'ACME'),
+    ]);
+    $doesNotContain = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('company', SegmentOperator::DoesNotContain, 'ACME'),
+    ]);
+    $startsWith = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('first_name', SegmentOperator::StartsWith, 'JA'),
+    ]);
+
+    $evaluator = new SegmentEvaluator();
+
+    expect($evaluator->evaluate($contains, ['company' => 'Acme Corp']))->toBeTrue()
+        ->and($evaluator->evaluate($doesNotContain, ['company' => 'Acme Corp']))->toBeFalse()
+        ->and($evaluator->evaluate($startsWith, ['first_name' => 'Jane']))->toBeTrue();
+});
+
+it('treats an invalid date value as a non-match instead of throwing', function () {
+    $before = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('subscribed_at', SegmentOperator::Before, '2024-06-01'),
+    ]);
+    $after = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('subscribed_at', SegmentOperator::After, '2024-06-01'),
+    ]);
+    $withinLast = new SegmentGroup(SegmentLogic::And, [
+        new SegmentCondition('subscribed_at', SegmentOperator::WithinLastDays, 7),
+    ]);
+
+    $evaluator = new SegmentEvaluator();
+
+    expect($evaluator->evaluate($before, ['subscribed_at' => 'not-a-date']))->toBeFalse()
+        ->and($evaluator->evaluate($after, ['subscribed_at' => 'not-a-date']))->toBeFalse()
+        ->and($evaluator->evaluate($withinLast, ['subscribed_at' => 'not-a-date']))->toBeFalse();
+});
+
+it('fails closed for an empty AND or OR group', function () {
+    $evaluator = new SegmentEvaluator();
+
+    expect($evaluator->evaluate(new SegmentGroup(SegmentLogic::And, []), ['first_name' => 'Jane']))->toBeFalse()
+        ->and($evaluator->evaluate(new SegmentGroup(SegmentLogic::Or, []), ['first_name' => 'Jane']))->toBeFalse();
+});

@@ -13,6 +13,7 @@ final class Campaign
         public string $templateId,
         public string $listId,
         public ?string $segmentId = null,
+        public ?string $senderId = null,
         public CampaignStatus $status = CampaignStatus::Draft,
         public ?DateTimeImmutable $scheduledAt = null,
     ) {

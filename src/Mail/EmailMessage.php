@@ -9,6 +9,7 @@ final readonly class EmailMessage
      * @param array<int, EmailAddress> $cc
      * @param array<int, EmailAddress> $bcc
      * @param array<int, array{path: string, name: string}> $attachments
+     * @param array<string, string> $headers Extra custom headers, e.g. List-Unsubscribe.
      */
     public function __construct(
         public EmailAddress $from,
@@ -20,6 +21,7 @@ final readonly class EmailMessage
         public array $bcc = [],
         public ?EmailAddress $replyTo = null,
         public array $attachments = [],
+        public array $headers = [],
     ) {
     }
 }

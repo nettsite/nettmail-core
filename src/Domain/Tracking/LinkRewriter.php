@@ -20,15 +20,19 @@ final class LinkRewriter
     /**
      * @param array<int, string> $skipUrls additional href values to leave unrewritten
      */
-    public function rewrite(string $html, string $sendToken, array $skipUrls = []): string
+    public function rewrite(string $html, string $sendToken, array $skipUrls = []): LinkRewriteResult
     {
         $skipUrls[] = '{{'.TemplateCompiler::UNSUBSCRIBE_MERGE_TAG.'}}';
+
+        $isFullDocument = stripos($html, '<html') !== false;
 
         $document = new DOMDocument();
 
         libxml_use_internal_errors(true);
         $document->loadHTML('<?xml encoding="utf-8"?>'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
         libxml_clear_errors();
+
+        $links = [];
 
         foreach ($document->getElementsByTagName('a') as $link) {
             $href = $link->getAttribute('href');
@@ -37,13 +41,28 @@ final class LinkRewriter
                 continue;
             }
 
-            $link->setAttribute('href', $this->trackingUrl($sendToken, $href));
+            $hash = $this->linkHash($href);
+            $links[$hash] = $href;
+
+            $link->setAttribute('href', $this->trackingUrl($sendToken, $hash));
+        }
+
+        if ($isFullDocument) {
+            foreach ($document->childNodes as $node) {
+                if ($node->nodeType === XML_PI_NODE) {
+                    $document->removeChild($node);
+
+                    break;
+                }
+            }
+
+            return new LinkRewriteResult($document->saveHTML(), $links);
         }
 
         $body = $document->getElementsByTagName('body')->item(0);
 
         if ($body === null) {
-            return $html;
+            return new LinkRewriteResult($html, $links);
         }
 
         $output = '';
@@ -52,7 +71,7 @@ final class LinkRewriter
             $output .= $document->saveHTML($child);
         }
 
-        return $output;
+        return new LinkRewriteResult($output, $links);
     }
 
     public function linkHash(string $url): string
@@ -60,8 +79,8 @@ final class LinkRewriter
         return substr(hash('sha256', $url), 0, 16);
     }
 
-    private function trackingUrl(string $sendToken, string $href): string
+    private function trackingUrl(string $sendToken, string $hash): string
     {
-        return rtrim($this->baseUrl, '/').'/nettmail/track/click/'.$sendToken.'/'.$this->linkHash($href);
+        return rtrim($this->baseUrl, '/').'/nettmail/track/click/'.$sendToken.'/'.$hash;
     }
 }

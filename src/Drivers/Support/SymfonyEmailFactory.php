@@ -40,6 +40,10 @@ final class SymfonyEmailFactory
             $email->attachFromPath($attachment['path'], $attachment['name']);
         }
 
+        foreach ($message->headers as $name => $value) {
+            $email->getHeaders()->addTextHeader($name, $value);
+        }
+
         return $email;
     }
 

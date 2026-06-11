@@ -30,7 +30,7 @@ final class PixelGenerator
         $tag = $this->imgTag($sendToken);
 
         if (preg_match('/<\/body>/i', $html) === 1) {
-            return preg_replace('/<\/body>/i', $tag.'</body>', $html, 1);
+            return preg_replace_callback('/<\/body>/i', fn (array $m): string => $tag.$m[0], $html, 1);
         }
 
         return $html.$tag;

@@ -29,12 +29,19 @@ final class Contact
     }
 
     /**
-     * A contact globally unsubscribed, hard-bounced, or marked as a
-     * complaint is suppressed from all broadcast and marketing sends.
-     * Operational transactional mail is exempt.
+     * A complaint suppresses all mail, including operational transactional
+     * mail — ISP agreements don't carve out exemptions for complainers.
+     *
+     * A contact globally unsubscribed or hard-bounced is suppressed from
+     * all broadcast and marketing sends. Operational transactional mail
+     * is exempt from those two.
      */
     public function isSuppressed(bool $isOperationalTransactional = false): bool
     {
+        if ($this->bounceType === BounceType::Complaint) {
+            return true;
+        }
+
         if ($isOperationalTransactional) {
             return false;
         }
@@ -43,6 +50,6 @@ final class Contact
             return true;
         }
 
-        return $this->bounceType === BounceType::Hard || $this->bounceType === BounceType::Complaint;
+        return $this->bounceType === BounceType::Hard;
     }
 }

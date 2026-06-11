@@ -7,6 +7,20 @@ use Nettsite\NettMail\Core\Tests\Fakes\FakeHttpClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 
+it('throws when an attachment file does not exist', function () {
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['ErrorCode' => 0, 'MessageID' => 'pm-123'])));
+
+    $driver = new PostmarkDriver('server-token', $httpClient, $factory, $factory);
+
+    $driver->send(new EmailMessage(
+        from: new EmailAddress('sender@example.com'),
+        to: [new EmailAddress('recipient@example.com')],
+        subject: 'Hello',
+        attachments: [['path' => '/nonexistent/file.txt', 'name' => 'file.txt']],
+    ));
+})->throws(RuntimeException::class);
+
 it('sends an email via the postmark api', function () {
     $factory = new Psr17Factory();
     $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['ErrorCode' => 0, 'MessageID' => 'pm-123'])));

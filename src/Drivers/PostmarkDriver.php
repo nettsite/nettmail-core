@@ -3,7 +3,8 @@
 namespace Nettsite\NettMail\Core\Drivers;
 
 use Nettsite\NettMail\Core\Contracts\MailDriverContract;
-use Nettsite\NettMail\Core\Mail\EmailAddress;
+use Nettsite\NettMail\Core\Drivers\Support\AddressFormatter;
+use Nettsite\NettMail\Core\Drivers\Support\AttachmentReader;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\Mail\SendResult;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -52,8 +53,8 @@ final class PostmarkDriver implements MailDriverContract
     private function payload(EmailMessage $message): array
     {
         $payload = [
-            'From' => self::formatAddress($message->from),
-            'To' => implode(', ', array_map(self::formatAddress(...), $message->to)),
+            'From' => AddressFormatter::format($message->from),
+            'To' => implode(', ', array_map(AddressFormatter::format(...), $message->to)),
             'Subject' => $message->subject,
         ];
 
@@ -66,35 +67,36 @@ final class PostmarkDriver implements MailDriverContract
         }
 
         if ($message->cc !== []) {
-            $payload['Cc'] = implode(', ', array_map(self::formatAddress(...), $message->cc));
+            $payload['Cc'] = implode(', ', array_map(AddressFormatter::format(...), $message->cc));
         }
 
         if ($message->bcc !== []) {
-            $payload['Bcc'] = implode(', ', array_map(self::formatAddress(...), $message->bcc));
+            $payload['Bcc'] = implode(', ', array_map(AddressFormatter::format(...), $message->bcc));
         }
 
         if ($message->replyTo !== null) {
-            $payload['ReplyTo'] = self::formatAddress($message->replyTo);
+            $payload['ReplyTo'] = AddressFormatter::format($message->replyTo);
         }
 
         if ($message->attachments !== []) {
             $payload['Attachments'] = array_map(
                 fn (array $attachment): array => [
                     'Name' => $attachment['name'],
-                    'Content' => base64_encode(file_get_contents($attachment['path'])),
+                    'Content' => base64_encode(AttachmentReader::read($attachment['path'])),
                     'ContentType' => 'application/octet-stream',
                 ],
                 $message->attachments,
             );
         }
 
-        return $payload;
-    }
+        if ($message->headers !== []) {
+            $payload['Headers'] = array_map(
+                fn (string $name, string $value): array => ['Name' => $name, 'Value' => $value],
+                array_keys($message->headers),
+                array_values($message->headers),
+            );
+        }
 
-    private static function formatAddress(EmailAddress $address): string
-    {
-        return $address->name !== null
-            ? "{$address->name} <{$address->email}>"
-            : $address->email;
+        return $payload;
     }
 }

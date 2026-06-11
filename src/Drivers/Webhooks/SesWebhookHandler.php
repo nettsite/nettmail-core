@@ -17,6 +17,9 @@ use Psr\Http\Message\RequestFactoryInterface;
  */
 final class SesWebhookHandler implements WebhookHandlerContract
 {
+    /** @var array<string, string> */
+    private array $certCache = [];
+
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
         private readonly ?RequestFactoryInterface $requestFactory = null,
@@ -85,9 +88,13 @@ final class SesWebhookHandler implements WebhookHandlerContract
             return false;
         }
 
-        $request = $this->requestFactory->createRequest('GET', $certUrl);
-        $response = $this->httpClient->sendRequest($request);
-        $cert = (string) $response->getBody();
+        if (! isset($this->certCache[$certUrl])) {
+            $request = $this->requestFactory->createRequest('GET', $certUrl);
+            $response = $this->httpClient->sendRequest($request);
+            $this->certCache[$certUrl] = (string) $response->getBody();
+        }
+
+        $cert = $this->certCache[$certUrl];
 
         $signableKeys = ($payload['Type'] ?? null) === 'Notification'
             ? ['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type']
@@ -109,6 +116,8 @@ final class SesWebhookHandler implements WebhookHandlerContract
             return false;
         }
 
-        return openssl_verify($signableString, base64_decode($signature), $publicKey, OPENSSL_ALGO_SHA1) === 1;
+        $algo = ($payload['SignatureVersion'] ?? '1') === '2' ? OPENSSL_ALGO_SHA256 : OPENSSL_ALGO_SHA1;
+
+        return openssl_verify($signableString, base64_decode($signature), $publicKey, $algo) === 1;
     }
 }

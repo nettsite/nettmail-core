@@ -5,9 +5,9 @@ namespace Nettsite\NettMail\Core\Drivers;
 use DateTimeImmutable;
 use DateTimeZone;
 use Nettsite\NettMail\Core\Contracts\MailDriverContract;
+use Nettsite\NettMail\Core\Drivers\Support\AddressFormatter;
 use Nettsite\NettMail\Core\Drivers\Support\SesV2Signer;
 use Nettsite\NettMail\Core\Drivers\Support\SymfonyEmailFactory;
-use Nettsite\NettMail\Core\Mail\EmailAddress;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\Mail\SendResult;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -73,11 +73,11 @@ final class SesDriver implements MailDriverContract
      */
     private function payload(EmailMessage $message): array
     {
-        if ($message->attachments !== []) {
+        if ($message->attachments !== [] || $message->headers !== []) {
             $email = SymfonyEmailFactory::make($message);
 
             return [
-                'FromEmailAddress' => self::formatAddress($message->from),
+                'FromEmailAddress' => AddressFormatter::format($message->from),
                 'Destination' => $this->destination($message),
                 'Content' => ['Raw' => ['Data' => base64_encode($email->toString())]],
             ];
@@ -94,7 +94,7 @@ final class SesDriver implements MailDriverContract
         }
 
         $payload = [
-            'FromEmailAddress' => self::formatAddress($message->from),
+            'FromEmailAddress' => AddressFormatter::format($message->from),
             'Destination' => $this->destination($message),
             'Content' => [
                 'Simple' => [
@@ -105,7 +105,7 @@ final class SesDriver implements MailDriverContract
         ];
 
         if ($message->replyTo !== null) {
-            $payload['ReplyToAddresses'] = [self::formatAddress($message->replyTo)];
+            $payload['ReplyToAddresses'] = [AddressFormatter::format($message->replyTo)];
         }
 
         return $payload;
@@ -117,24 +117,17 @@ final class SesDriver implements MailDriverContract
     private function destination(EmailMessage $message): array
     {
         $destination = [
-            'ToAddresses' => array_map(self::formatAddress(...), $message->to),
+            'ToAddresses' => array_map(AddressFormatter::format(...), $message->to),
         ];
 
         if ($message->cc !== []) {
-            $destination['CcAddresses'] = array_map(self::formatAddress(...), $message->cc);
+            $destination['CcAddresses'] = array_map(AddressFormatter::format(...), $message->cc);
         }
 
         if ($message->bcc !== []) {
-            $destination['BccAddresses'] = array_map(self::formatAddress(...), $message->bcc);
+            $destination['BccAddresses'] = array_map(AddressFormatter::format(...), $message->bcc);
         }
 
         return $destination;
-    }
-
-    private static function formatAddress(EmailAddress $address): string
-    {
-        return $address->name !== null
-            ? "{$address->name} <{$address->email}>"
-            : $address->email;
     }
 }

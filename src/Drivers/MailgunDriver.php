@@ -3,8 +3,10 @@
 namespace Nettsite\NettMail\Core\Drivers;
 
 use Nettsite\NettMail\Core\Contracts\MailDriverContract;
+use Nettsite\NettMail\Core\Drivers\Support\AddressFormatter;
+use Nettsite\NettMail\Core\Drivers\Support\AttachmentReader;
+use Nettsite\NettMail\Core\Drivers\Support\MessageIdNormalizer;
 use Nettsite\NettMail\Core\Drivers\Support\MultipartFormBuilder;
-use Nettsite\NettMail\Core\Mail\EmailAddress;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\Mail\SendResult;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -28,18 +30,18 @@ final class MailgunDriver implements MailDriverContract
     {
         $form = new MultipartFormBuilder();
 
-        $form->addField('from', self::formatAddress($message->from));
+        $form->addField('from', AddressFormatter::format($message->from));
 
         foreach ($message->to as $address) {
-            $form->addField('to', self::formatAddress($address));
+            $form->addField('to', AddressFormatter::format($address));
         }
 
         foreach ($message->cc as $address) {
-            $form->addField('cc', self::formatAddress($address));
+            $form->addField('cc', AddressFormatter::format($address));
         }
 
         foreach ($message->bcc as $address) {
-            $form->addField('bcc', self::formatAddress($address));
+            $form->addField('bcc', AddressFormatter::format($address));
         }
 
         $form->addField('subject', $message->subject);
@@ -53,11 +55,15 @@ final class MailgunDriver implements MailDriverContract
         }
 
         if ($message->replyTo !== null) {
-            $form->addField('h:Reply-To', self::formatAddress($message->replyTo));
+            $form->addField('h:Reply-To', AddressFormatter::format($message->replyTo));
+        }
+
+        foreach ($message->headers as $name => $value) {
+            $form->addField("h:{$name}", $value);
         }
 
         foreach ($message->attachments as $attachment) {
-            $form->addFile('attachment', $attachment['name'], file_get_contents($attachment['path']));
+            $form->addFile('attachment', $attachment['name'], AttachmentReader::read($attachment['path']));
         }
 
         $request = $this->requestFactory
@@ -78,13 +84,6 @@ final class MailgunDriver implements MailDriverContract
             return SendResult::failure($body['message'] ?? "Mailgun API error ({$response->getStatusCode()})");
         }
 
-        return SendResult::success($body['id'] ?? '');
-    }
-
-    private static function formatAddress(EmailAddress $address): string
-    {
-        return $address->name !== null
-            ? "{$address->name} <{$address->email}>"
-            : $address->email;
+        return SendResult::success(MessageIdNormalizer::strip($body['id'] ?? '') ?? '');
     }
 }

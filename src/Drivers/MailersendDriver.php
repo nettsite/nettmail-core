@@ -3,6 +3,8 @@
 namespace Nettsite\NettMail\Core\Drivers;
 
 use Nettsite\NettMail\Core\Contracts\MailDriverContract;
+use Nettsite\NettMail\Core\Drivers\Support\AddressFormatter;
+use Nettsite\NettMail\Core\Drivers\Support\AttachmentReader;
 use Nettsite\NettMail\Core\Mail\EmailAddress;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\Mail\SendResult;
@@ -81,10 +83,18 @@ final class MailersendDriver implements MailDriverContract
             $payload['attachments'] = array_map(
                 fn (array $attachment): array => [
                     'filename' => $attachment['name'],
-                    'content' => base64_encode(file_get_contents($attachment['path'])),
+                    'content' => base64_encode(AttachmentReader::read($attachment['path'])),
                     'disposition' => 'attachment',
                 ],
                 $message->attachments,
+            );
+        }
+
+        if ($message->headers !== []) {
+            $payload['headers'] = array_map(
+                fn (string $name, string $value): array => ['name' => $name, 'value' => $value],
+                array_keys($message->headers),
+                array_values($message->headers),
             );
         }
 
@@ -98,8 +108,10 @@ final class MailersendDriver implements MailDriverContract
     {
         $formatted = ['email' => $address->email];
 
-        if ($address->name !== null) {
-            $formatted['name'] = $address->name;
+        $name = AddressFormatter::sanitizeName($address->name);
+
+        if ($name !== null) {
+            $formatted['name'] = $name;
         }
 
         return $formatted;

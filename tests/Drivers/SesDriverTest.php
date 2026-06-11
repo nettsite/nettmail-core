@@ -64,6 +64,53 @@ it('sends raw mime content when attachments are present', function () {
     unlink($tmpFile);
 });
 
+it('excludes bcc recipients from the raw mime payload', function () {
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['MessageId' => 'ses-123'])));
+
+    $driver = new SesDriver('AKIA_TEST', 'secret', 'us-east-1', $httpClient, $factory, $factory);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'nettmail');
+    file_put_contents($tmpFile, 'attachment contents');
+
+    $driver->send(new EmailMessage(
+        from: new EmailAddress('sender@example.com'),
+        to: [new EmailAddress('recipient@example.com')],
+        bcc: [new EmailAddress('secret@example.com')],
+        subject: 'Hello',
+        text: 'Hi',
+        attachments: [['path' => $tmpFile, 'name' => 'file.txt']],
+    ));
+
+    $body = json_decode((string) $httpClient->lastRequest->getBody(), true);
+    $raw = base64_decode($body['Content']['Raw']['Data']);
+
+    expect($raw)->not->toContain('Bcc:')
+        ->and($raw)->not->toContain('secret@example.com');
+
+    unlink($tmpFile);
+});
+
+it('sends headers via raw mime even without attachments', function () {
+    $factory = new Psr17Factory();
+    $httpClient = new FakeHttpClient(new Response(200, ['Content-Type' => 'application/json'], json_encode(['MessageId' => 'ses-123'])));
+
+    $driver = new SesDriver('AKIA_TEST', 'secret', 'us-east-1', $httpClient, $factory, $factory);
+
+    $driver->send(new EmailMessage(
+        from: new EmailAddress('sender@example.com'),
+        to: [new EmailAddress('recipient@example.com')],
+        subject: 'Hello',
+        text: 'Hi',
+        headers: ['List-Unsubscribe' => '<mailto:unsub@example.com>'],
+    ));
+
+    $body = json_decode((string) $httpClient->lastRequest->getBody(), true);
+
+    expect($body['Content'])->toHaveKey('Raw')
+        ->and(base64_decode($body['Content']['Raw']['Data']))->toContain('List-Unsubscribe: <mailto:unsub@example.com>');
+});
+
 it('returns a failure result on a ses api error', function () {
     $factory = new Psr17Factory();
     $httpClient = new FakeHttpClient(new Response(400, ['Content-Type' => 'application/json'], json_encode(['message' => 'Invalid recipient'])));

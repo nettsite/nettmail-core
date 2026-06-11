@@ -3,7 +3,6 @@
 namespace Nettsite\NettMail\Core\Domain\Campaigns;
 
 use Nettsite\NettMail\Core\Domain\Contacts\Contact;
-use Nettsite\NettMail\Core\Domain\Templates\CompiledTemplate;
 use Nettsite\NettMail\Core\Domain\Templates\MergeTagRenderer;
 
 final class CampaignSender
@@ -23,18 +22,22 @@ final class CampaignSender
     }
 
     /**
-     * Renders the subject and compiled template for a single recipient,
-     * substituting merge tags (first name, custom fields, etc.).
+     * Renders the subject and prepared template for a single recipient,
+     * substituting merge tags (first name, custom fields, etc.) and
+     * swapping in the recipient's send token.
      *
      * @param array<string, string|int|float> $mergeFields
      * @return array{subject: string, html: string, text: string}
      */
-    public function renderForContact(string $subject, CompiledTemplate $template, array $mergeFields): array
+    public function renderForContact(string $subject, PreparedCampaignTemplate $prepared, string $sendToken, array $mergeFields): array
     {
+        $html = $this->mergeTagRenderer->render($prepared->html, $mergeFields);
+        $html = str_replace($prepared->sendTokenPlaceholder, $sendToken, $html);
+
         return [
             'subject' => $this->mergeTagRenderer->render($subject, $mergeFields),
-            'html' => $this->mergeTagRenderer->render($template->html, $mergeFields),
-            'text' => $this->mergeTagRenderer->render($template->plainText, $mergeFields),
+            'html' => $html,
+            'text' => $this->mergeTagRenderer->render($prepared->text, $mergeFields),
         ];
     }
 }

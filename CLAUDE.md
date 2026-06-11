@@ -20,9 +20,9 @@ vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --allow-risky=yes
 
 ## Architecture
 
-### Build order (see PLAN.md)
+### Build order
 
-`PLAN.md` is the authoritative stage-by-stage build log/spec for this package. Each stage = contracts → implementation → Pest tests → commit. Stages 0–8 are done (foundation, drivers, templates, contacts/lists, bounces, webhooks, campaigns/segmentation, tracking, remaining drivers). Check PLAN.md before starting new work to see what's next and to follow the established per-stage pattern.
+The spec (`../email-package-spec.html`, v0.4) is the authoritative source for requirements and remaining work — see its Delivery Phases section. Stages 0–8 (foundation, drivers, templates, contacts/lists, bounces, webhooks, campaigns/segmentation, tracking, remaining drivers) are complete; the stage-by-stage build log lives in git history. Follow the established pattern for new work: contracts → implementation → Pest tests → commit.
 
 ### Layout
 

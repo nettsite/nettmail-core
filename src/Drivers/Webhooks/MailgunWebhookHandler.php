@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use Nettsite\NettMail\Core\Contracts\WebhookHandlerContract;
 use Nettsite\NettMail\Core\Domain\Webhooks\EventType;
 use Nettsite\NettMail\Core\Domain\Webhooks\NormalizedEvent;
+use Nettsite\NettMail\Core\Drivers\Support\MessageIdNormalizer;
 
 /**
  * Mailgun signs webhooks via a `signature` object included in the JSON
@@ -13,6 +14,11 @@ use Nettsite\NettMail\Core\Domain\Webhooks\NormalizedEvent;
  */
 final class MailgunWebhookHandler implements WebhookHandlerContract
 {
+    public function __construct(
+        private readonly int $timestampToleranceSeconds = 300,
+    ) {
+    }
+
     public function verify(string $rawBody, array $headers, string $secret): bool
     {
         /** @var array<string, mixed>|null $payload */
@@ -28,6 +34,10 @@ final class MailgunWebhookHandler implements WebhookHandlerContract
         $sig = $signature['signature'] ?? null;
 
         if (! is_string($timestamp) || ! is_string($token) || ! is_string($sig)) {
+            return false;
+        }
+
+        if (abs(time() - (int) $timestamp) > $this->timestampToleranceSeconds) {
             return false;
         }
 
@@ -57,7 +67,7 @@ final class MailgunWebhookHandler implements WebhookHandlerContract
 
         return [new NormalizedEvent(
             type: $type,
-            providerMessageId: $eventData['message']['headers']['message-id'] ?? null,
+            providerMessageId: MessageIdNormalizer::strip($eventData['message']['headers']['message-id'] ?? null),
             occurredAt: (new DateTimeImmutable())->setTimestamp((int) ($eventData['timestamp'] ?? time())),
             rawPayload: $payload,
         )];
