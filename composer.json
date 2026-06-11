@@ -1,5 +1,5 @@
 {
-    "name": "nettmail/core",
+    "name": "nettsite/nettmail-core",
     "description": "NettMail core package - framework-agnostic email sending, contacts, lists, segments, bounce handling and template compilation",
     "keywords": [
         "nettmail",
