@@ -66,4 +66,34 @@ final class BounceClassifier
             $contact->bouncedAt = null;
         }
     }
+
+    /**
+     * For drivers with no delivery events (PHP mail, plain SMTP): a send
+     * producing no bounce within `$resetDays` resets the consecutive
+     * soft-bounce counter, mirroring {@see recordSuccessfulDelivery()}.
+     * Hard bounces and complaints are never reset. Returns whether a
+     * reset happened.
+     */
+    public function resetStaleSoftBounces(
+        Contact $contact,
+        DateTimeImmutable $lastSentAt,
+        DateTimeImmutable $now,
+        int $resetDays = 7,
+    ): bool {
+        if ($contact->bounceType !== BounceType::Soft) {
+            return false;
+        }
+
+        if ($lastSentAt > $now->modify("-{$resetDays} days")) {
+            return false;
+        }
+
+        if ($contact->bouncedAt !== null && $contact->bouncedAt >= $lastSentAt) {
+            return false;
+        }
+
+        $this->recordSuccessfulDelivery($contact);
+
+        return true;
+    }
 }
