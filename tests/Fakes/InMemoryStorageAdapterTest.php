@@ -1,5 +1,6 @@
 <?php
 
+use Nettsite\NettMail\Core\Domain\Contacts\BounceType;
 use Nettsite\NettMail\Core\Domain\Contacts\Contact;
 use Nettsite\NettMail\Core\Domain\Contacts\ListMembership;
 use Nettsite\NettMail\Core\Domain\Contacts\MailingList;
@@ -52,4 +53,14 @@ it('saves and finds list memberships', function () {
     expect($found)->toBe($membership)
         ->and($found->status)->toBe(MembershipStatus::Pending)
         ->and($adapter->findMembership($contact->id, 'missing'))->toBeNull();
+});
+
+it('finds only suppressed contacts', function () {
+    $adapter = new InMemoryStorageAdapter();
+
+    $active = $adapter->saveContact(new Contact(id: null, email: 'active@example.com'));
+    $bounced = $adapter->saveContact(new Contact(id: null, email: 'bounced@example.com', bounceType: BounceType::Hard));
+
+    expect($adapter->findSuppressedContacts())->toBe([$bounced])
+        ->and($active)->not->toBeNull();
 });

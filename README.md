@@ -23,10 +23,14 @@ This package contains all domain logic, contracts, and drivers. It has no depend
 - **Open & click tracking** — tracking-pixel insertion and link rewriting done once per campaign (with a send-token placeholder), producing a link hash → URL map for the redirect endpoint.
 - **Templates** — compilation with enforced unsubscribe links for broadcast templates and auto-generated plain-text fallback.
 - **Injection-safe addressing** — display names are RFC 5322 quoted and emails validated centrally, on every driver.
+- **IMAP bounce-mailbox polling** — `BouncePoller` fetches unseen messages via an injectable `MailboxContract`, classifies them with the same DSN parser/heuristics as webhooks, and files them into "Processed"/"Unrecognised" folders.
+- **POPIA right-to-erasure** — `NettMail::eraseContact()` anonymises a contact's PII while preserving its id, so aggregate send statistics remain intact.
+- **Suppression list export** — `NettMail::exportSuppressions()` produces a CSV of hard-bounced, complained, and globally unsubscribed contacts.
+- **Double opt-in tokens** — `OptInTokenGenerator` issues and verifies framework-agnostic, HMAC-signed, expiring confirmation tokens shared by both Laravel and WordPress adapters.
 
 ## Status
 
-Feature-complete for the current delivery phases. Remaining core work (IMAP bounce-mailbox polling, right-to-erasure, suppression export, double opt-in tokens) is tracked in the project spec and lands alongside the adapter packages that need it.
+Feature-complete for the current delivery phases, including all Phase 4 compliance primitives (IMAP bounce polling, right-to-erasure, suppression export, double opt-in tokens).
 
 ## Installation
 
@@ -42,7 +46,10 @@ use Nettsite\NettMail\Core\Mail\EmailAddress;
 use Nettsite\NettMail\Core\Mail\EmailMessage;
 use Nettsite\NettMail\Core\NettMail;
 
-$nettmail = new NettMail(new ResendDriver($apiKey, $httpClient, $requestFactory, $streamFactory));
+$nettmail = new NettMail(
+    new ResendDriver($apiKey, $httpClient, $requestFactory, $streamFactory),
+    $storage, // your StorageAdapterContract implementation
+);
 
 $result = $nettmail->send(new EmailMessage(
     from: new EmailAddress('sender@example.com', 'Sender'),
@@ -61,7 +68,7 @@ Any class implementing `MailDriverContract` can be passed to `NettMail` — swap
 ## Testing
 
 ```bash
-composer test     # Pest, 147 tests
+composer test     # Pest, 164 tests
 composer phpstan  # PHPStan level 5
 ```
 

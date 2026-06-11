@@ -32,4 +32,12 @@ interface StorageAdapterContract
     public function findMembership(string $contactId, string $listId): ?ListMembership;
 
     public function saveMembership(ListMembership $membership): ListMembership;
+
+    /**
+     * Returns every contact suppressed via hard bounce, complaint, or
+     * global unsubscribe (per Contact::isSuppressed()).
+     *
+     * @return array<int, Contact>
+     */
+    public function findSuppressedContacts(): array;
 }

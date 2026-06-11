@@ -94,4 +94,12 @@ final class InMemoryStorageAdapter implements StorageAdapterContract
 
         return $membership;
     }
+
+    public function findSuppressedContacts(): array
+    {
+        return array_values(array_filter(
+            $this->contacts,
+            fn (Contact $contact): bool => $contact->isSuppressed(),
+        ));
+    }
 }
