@@ -59,6 +59,24 @@ it('does not duplicate the physical address footer when already present', functi
     expect(substr_count($prepared->html, '123 Main St, Springfield'))->toBe(1);
 });
 
+it('skips link rewriting and the pixel when tracking flags are disabled', function () {
+    $preparer = new CampaignTemplatePreparer(
+        new LinkRewriter('https://example.com'),
+        new PixelGenerator('https://example.com'),
+    );
+
+    $template = new CompiledTemplate(
+        html: '<html><body><p>Hi</p><a href="https://example.com/page">Visit</a></body></html>',
+        plainText: 'Hi - https://example.com/page',
+    );
+
+    $prepared = $preparer->prepare($template, trackClicks: false, trackOpens: false);
+
+    expect($prepared->html)->toContain('href="https://example.com/page"')
+        ->and($prepared->html)->not->toContain('/nettmail/track/open/')
+        ->and($prepared->links)->toBe([]);
+});
+
 it('generates a different placeholder on each call', function () {
     $preparer = new CampaignTemplatePreparer(
         new LinkRewriter('https://example.com'),

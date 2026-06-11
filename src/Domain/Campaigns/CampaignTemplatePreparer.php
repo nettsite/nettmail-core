@@ -25,12 +25,27 @@ final class CampaignTemplatePreparer
      *                                  `</body>` unless already present in the
      *                                  HTML (template author placed it manually).
      */
-    public function prepare(CompiledTemplate $template, ?string $physicalAddress = null): PreparedCampaignTemplate
-    {
+    public function prepare(
+        CompiledTemplate $template,
+        ?string $physicalAddress = null,
+        bool $trackClicks = true,
+        bool $trackOpens = true,
+    ): PreparedCampaignTemplate {
         $placeholder = '{{__send_token_'.bin2hex(random_bytes(8)).'}}';
 
-        $rewritten = $this->linkRewriter->rewrite($template->html, $placeholder);
-        $html = $this->pixelGenerator->appendToHtml($rewritten->html, $placeholder);
+        $html = $template->html;
+        $links = [];
+
+        if ($trackClicks) {
+            $rewritten = $this->linkRewriter->rewrite($html, $placeholder);
+            $html = $rewritten->html;
+            $links = $rewritten->links;
+        }
+
+        if ($trackOpens) {
+            $html = $this->pixelGenerator->appendToHtml($html, $placeholder);
+        }
+
         $text = $template->plainText;
 
         if ($physicalAddress !== null && ! str_contains($html, $physicalAddress)) {
@@ -38,7 +53,7 @@ final class CampaignTemplatePreparer
             $text .= "\n\n".$physicalAddress;
         }
 
-        return new PreparedCampaignTemplate($html, $text, $rewritten->links, $placeholder);
+        return new PreparedCampaignTemplate($html, $text, $links, $placeholder);
     }
 
     private function appendFooter(string $html, string $physicalAddress): string
