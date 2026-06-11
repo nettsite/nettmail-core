@@ -31,7 +31,7 @@ final class CampaignTemplatePreparer
         bool $trackClicks = true,
         bool $trackOpens = true,
     ): PreparedCampaignTemplate {
-        $placeholder = '{{__send_token_'.bin2hex(random_bytes(8)).'}}';
+        $placeholder = '__send_token_'.bin2hex(random_bytes(8)).'__';
 
         $html = $template->html;
         $links = [];
