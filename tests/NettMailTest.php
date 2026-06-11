@@ -62,3 +62,48 @@ it('exports suppressed contacts as csv', function () {
     expect($csv)->toContain('email,reason,suppressed_at')
         ->and($csv)->toContain('bounced@example.com,hard_bounce,2024-01-01T00:00:00+00:00');
 });
+
+it('upserts a contact from a host-application source', function () {
+    $storage = new InMemoryStorageAdapter();
+    $nettmail = new NettMail(new FakeMailDriver(), $storage);
+
+    $contact = $nettmail->upsertContactFromSource('merlin', 123, [
+        'email' => 'jane@example.com',
+        'first_name' => 'Jane',
+        'metadata' => ['plan' => 'free'],
+    ]);
+
+    expect($contact->firstName)->toBe('Jane')
+        ->and($contact->sourceType)->toBe('merlin')
+        ->and($contact->sourceId)->toBe('123')
+        ->and($contact->metadata)->toBe(['plan' => 'free']);
+
+    $updated = $nettmail->upsertContactFromSource('merlin', 123, [
+        'email' => 'jane@example.com',
+        'metadata' => ['region' => 'za'],
+    ]);
+
+    expect($updated->id)->toBe($contact->id)
+        ->and($updated->firstName)->toBe('Jane')
+        ->and($updated->metadata)->toBe(['plan' => 'free', 'region' => 'za']);
+});
+
+it('never clears suppression state when upserting from a source', function () {
+    $storage = new InMemoryStorageAdapter();
+    $nettmail = new NettMail(new FakeMailDriver(), $storage);
+
+    $storage->saveContact(new Contact(
+        id: null,
+        email: 'jane@example.com',
+        bounceType: BounceType::Hard,
+        bouncedAt: new DateTimeImmutable('2024-01-01T00:00:00+00:00'),
+    ));
+
+    $contact = $nettmail->upsertContactFromSource('merlin', 123, [
+        'email' => 'jane@example.com',
+        'first_name' => 'Jane',
+    ]);
+
+    expect($contact->bounceType)->toBe(BounceType::Hard)
+        ->and($contact->isSuppressed())->toBeTrue();
+});

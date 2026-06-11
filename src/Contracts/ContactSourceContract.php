@@ -13,12 +13,12 @@ interface ContactSourceContract
     /**
      * Return contacts as an iterable/generator to avoid memory issues.
      *
-     * @return iterable<array{email: string, first_name?: string, last_name?: string, metadata?: array<string, mixed>}>
+     * @return iterable<array{email: string, first_name?: string, last_name?: string, phone?: string, metadata?: array<string, mixed>, source_id?: string|int}>
      */
     public function contacts(): iterable;
 
     /**
-     * @return array{email: string, first_name?: string, last_name?: string, metadata?: array<string, mixed>}|null
+     * @return array{email: string, first_name?: string, last_name?: string, phone?: string, metadata?: array<string, mixed>, source_id?: string|int}|null
      */
     public function findContact(string|int $sourceId): ?array;
 }
