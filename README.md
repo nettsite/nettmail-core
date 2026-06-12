@@ -1,12 +1,12 @@
 # NettMail Core
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/nettmail/core.svg?style=flat-square)](https://packagist.org/packages/nettmail/core)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/nettsite/nettmail-core.svg?style=flat-square)](https://packagist.org/packages/nettsite/nettmail-core)
 [![Tests](https://github.com/nettsite/nettmail-core/actions/workflows/run-tests.yml/badge.svg)](https://github.com/nettsite/nettmail-core/actions/workflows/run-tests.yml)
-[![Total Downloads](https://img.shields.io/packagist/dt/nettmail/core.svg?style=flat-square)](https://packagist.org/packages/nettmail/core)
+[![Total Downloads](https://img.shields.io/packagist/dt/nettsite/nettmail-core.svg?style=flat-square)](https://packagist.org/packages/nettsite/nettmail-core)
 
 Framework-agnostic PHP 8.2+ core for **NettMail** — a composable email package handling transactional delivery, broadcast campaigns, drag-and-drop template authoring (Unlayer), contact list management, segmentation, bounce processing, and provider webhook ingestion.
 
-This package contains all domain logic, contracts, and drivers. It has no dependency on Laravel or WordPress — those are thin adapters built on top of `nettmail/core`:
+This package contains all domain logic, contracts, and drivers. It has no dependency on Laravel or WordPress — those are thin adapters built on top of `nettsite/nettmail-core`:
 
 - [`nettmail/laravel`](https://github.com/nettsite/nettmail-laravel) — Laravel adapter (Eloquent models, Livewire admin UI, queued jobs)
 - `nettmail/wordpress` — WordPress plugin adapter
@@ -35,7 +35,7 @@ Feature-complete for the current delivery phases, including all Phase 4 complian
 ## Installation
 
 ```bash
-composer require nettmail/core
+composer require nettsite/nettmail-core
 ```
 
 ## Usage
