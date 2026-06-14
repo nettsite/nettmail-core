@@ -24,3 +24,17 @@ it('compiles a broadcast template containing the unsubscribe link', function () 
         ->and($compiled->plainText)->toContain('Unsubscribe (')
         ->and((new TemplateCompiler())->hasUnsubscribeLink($html))->toBeTrue();
 });
+
+it('inlines style block rules into element style attributes', function () {
+    $html = '<style>p { color: red; }</style><p>Hello {{first_name}}</p>';
+
+    $compiled = (new TemplateCompiler())->compile($html, TemplateType::Transactional);
+
+    expect($compiled->html)->toContain('style="color: red;"');
+});
+
+it('leaves templates without a style block unchanged', function () {
+    $compiled = (new TemplateCompiler())->compile('<p>Hello {{first_name}}</p>', TemplateType::Transactional);
+
+    expect($compiled->html)->toBe('<p>Hello {{first_name}}</p>');
+});
