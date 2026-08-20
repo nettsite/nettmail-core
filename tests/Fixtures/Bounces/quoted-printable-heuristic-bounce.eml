@@ -1,0 +1,13 @@
+From: Microsoft Outlook <postmaster@example-exchange.test>
+To: bounces@yourdomain.com
+Subject: Message status report
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Your message could not be deliv=
+ered to the recipient's mailbox.
+
+The following organization rejected your message: contoso-mail01.conto=
+so.test.
+
+Recipient: someone@example.test

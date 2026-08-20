@@ -13,6 +13,8 @@ final class DsnParser implements BounceParserContract
 {
     public function parse(string $rawMessage): ?ParsedBounce
     {
+        $rawMessage = $this->normalize($rawMessage);
+
         $statusCode = $this->extractStatusCode($rawMessage);
         $recipient = $this->extractRecipient($rawMessage);
 
@@ -25,6 +27,18 @@ final class DsnParser implements BounceParserContract
         }
 
         return $this->parseHeuristically($rawMessage, $recipient);
+    }
+
+    /**
+     * Undo quoted-printable soft line breaks/escapes and RFC 2822 header
+     * folding before matching, so wrapped Diagnostic-Code/Status lines and
+     * words split mid-line (both common on Exchange/Outlook NDRs) still match.
+     */
+    private function normalize(string $rawMessage): string
+    {
+        $decoded = quoted_printable_decode($rawMessage);
+
+        return preg_replace('/\r?\n[ \t]+/', ' ', $decoded);
     }
 
     private function extractStatusCode(string $rawMessage): ?string

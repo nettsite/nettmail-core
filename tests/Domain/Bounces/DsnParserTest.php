@@ -48,3 +48,21 @@ it('returns null for messages that are not bounces', function () {
 
     expect($parsed)->toBeNull();
 });
+
+it('unfolds RFC 2822 continuation lines before matching DSN fields', function () {
+    $parsed = (new DsnParser())->parse(bounceFixture('folded-header-hard-bounce.eml'));
+
+    expect($parsed)->not->toBeNull()
+        ->and($parsed->recipient)->toBe('nobody@invalid-domain.test')
+        ->and($parsed->statusCode)->toBe('5.1.1')
+        ->and($parsed->bounceType)->toBe(BounceType::Hard);
+});
+
+it('decodes quoted-printable soft line breaks before heuristic matching', function () {
+    $parsed = (new DsnParser())->parse(bounceFixture('quoted-printable-heuristic-bounce.eml'));
+
+    expect($parsed)->not->toBeNull()
+        ->and($parsed->recipient)->toBe('someone@example.test')
+        ->and($parsed->statusCode)->toBeNull()
+        ->and($parsed->bounceType)->toBe(BounceType::Hard);
+});
